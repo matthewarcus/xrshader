@@ -18,7 +18,7 @@ function xrscene(mode,xrButton) {
     // If shaderfile is defined, load locally,
     let shaderfile = null
     shaderfile = "goursat.glsl";
-    shaderfile = "pentagram.glsl";
+    //shaderfile = "pentagram.glsl";
 
     // else try and load a Shadertoy shader
     let shaderID = "3d2GDt" // Shadertoy Goursat
