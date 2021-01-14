@@ -206,7 +206,6 @@ function xrscene(mode,xrButton) {
     }
     
     function onXRFrame(timestamp, frame) {
-        console.log("XRFrame");
         const session = frame.session;
         session.requestAnimationFrame(onXRFrame);
         const pose = frame.getViewerPose(xrRefSpace);
