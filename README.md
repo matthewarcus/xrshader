@@ -2,9 +2,9 @@
 
 Experimenting with fragment shaders for WebXR - work in progress, but feedback always welcome.
 
-Try it: https://matthewarcus.github.io/xrshader
+Try it: [https://matthewarcus.github.io/xrshader](https://matthewarcus.github.io/xrshader)
 
-Main repository: https://github.com/matthewarcus/xrshader
+Main repository: [https://github.com/matthewarcus/xrshader](https://github.com/matthewarcus/xrshader)
 
 ## Introduction
 
@@ -34,7 +34,7 @@ with Firefox and Chrome with WebXR API emulator. Find the WebXR
 emulator for either Firefox or Chrome in the Add-on store - it's the same for
 both.
 
-If you need it, the source is at https://github.com/MozillaReality/,
+If you need it, the source is at [https://github.com/MozillaReality/](https://github.com/MozillaReality/),
 but the Store version is up to date (as of Jan 2021), including
 for example AR support.
 
