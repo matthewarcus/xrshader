@@ -2,9 +2,9 @@
 
 Experimenting with fragment shaders for WebXR - work in progress, but feedback always welcome.
 
-*Try It*: https://matthewarcus.github.io/xrshader
+Try it: https://matthewarcus.github.io/xrshader
 
-*Main repo*: https://github.com/matthewarcus/xrshader
+Main repository: https://github.com/matthewarcus/xrshader
 
 ## Introduction
 
@@ -46,8 +46,8 @@ supports both simultaneously.
 ## How it works
 
 * Projection & view matrix
-In clipspace, the camera is at `(0,0,1,0)`, ie. infinitely far away in
-the positive z direction. To get a real camera position, apply the
+In clipspace, the viewer is at `(0,0,1,0)`, ie. infinitely far away in
+the positive z direction. To get a real viewer position, apply the
 inverse of the projection matrix combined with the view matrix (which
 defines how the user is positioned in the reference frame).
 ```javascript
@@ -67,15 +67,20 @@ defines how the user is positioned in the reference frame).
     }
   }
 ```
-* Centre ray
+* Centre ray: in clipspace, the centre of the the view is at
+`(0,0,-1.0)`, ie. infinitely far away in the negative z direction, to
+map that to a viewer relative direction, apply the inverse of the view
+matrix (so the result is still a projective point at infinity):
 ```
   vec3 rcentre = (inverse(iView)*vec4(0,0,-1,0)).xyz;
 ```
 * Alpha blending. In AR mode, the framework uses alpha blending to
 combine the generated image with the real world image.
-* Selection events. Selection events are detected by the javascript
+* Selection events: selection events are detected by the javascript
 framework and are passed to the shader as the w component of the
 iMouse uniform.
+* Errors: generally, the code raises exceptions on errors, better
+reporting would be good. Debugging is easier with the emulator &
+making use of the Javascript console.
 
 To be continued...
-

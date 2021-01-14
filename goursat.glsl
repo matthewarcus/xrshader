@@ -358,15 +358,7 @@ bool scene(vec3 p0, vec3 r, out vec3 col) {
   return true;
 }
 
-vec3 transform(in vec3 p) {
-#if 0
-  if (iMouse.x > 0.0) {
-    float theta = (2.0*iMouse.y-iResolution.y)/iResolution.y*PI;
-    float phi = (2.0*iMouse.x-iResolution.x)/iResolution.x*PI;
-    p.yz = rotate(p.yz,theta);
-    p.zx = rotate(p.zx,-phi);
-  }
-#endif
+vec3 transform(vec3 p) {
   if (dorotate) {
     float t = iTime;
     p.yz = rotate(p.yz, 0.1*t);
@@ -383,7 +375,7 @@ vec4 mainFun(vec3 p, vec3 r, vec3 rcentre) {
   // Screenspace ray derivatives
   vec3 drdx = dFdx(r);
   vec3 drdy = dFdy(r);
-  vec3 color = vec3(0);
+  vec4 color = vec4(0);
   float k = dot(r,rcentre);
   // Just antialias the central part of the image.
   float aa0 = float(k > 0.96 ? 3 : k > 0.9 ? 2 : 1);
@@ -394,32 +386,43 @@ vec4 mainFun(vec3 p, vec3 r, vec3 rcentre) {
       vec3 col1;
       // What to do with partially visible pixels?
       if (scene(p,normalize(r+(i-0.5*aa)/aa*drdx+(j-0.5*aa)/aa*drdy),col1)) {
-        color += col1;
+        color += vec4(col1,1.0);
       }
     }
   }
   color /= aa*aa;
-  //if (dot(r,rcentre) > 0.999) color.b = 1.0;
+  if (dot(r,rcentre) > 0.999) color.b = 1.0;
   //color *= sqrt(aa0/3.0); // Show aa bands
   if (alert) color.x = 1.0;
-  return vec4(sqrt(color),1);
+  return pow(color,vec4(0.4545));
 }
 
-void mainVR(out vec4 fragColor, vec2 fragCoord, vec3 eye, vec3 ray) {
-  // The origin of the world is at the viewer, so apply an offset
-  // to the camera position (or equivalently, move the scene
-  // further away).
-  vec3 offset = vec3(0,0,8);
+void mainVR(out vec4 fragColor, vec2 fragCoord, vec3 viewer, vec3 ray) {
+  vec3 sceneoffset = vec3(0,0,8);
   // rcentre should be ray through centre of clipspace.
   vec3 rcentre = (inverse(iView)*vec4(0,0,-1,0)).xyz;
-  fragColor = mainFun(eye+offset,ray,rcentre);
+  fragColor = mainFun(viewer+sceneoffset,ray,rcentre);
 }
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+vec3 mousetransform(vec3 p) {
+  if (iMouse.x > 0.0) {
+    float theta = (2.0*iMouse.y-iResolution.y)/iResolution.y*PI;
+    float phi = (2.0*iMouse.x-iResolution.x)/iResolution.x*PI;
+    p.yz = rotate(p.yz,theta);
+    p.zx = rotate(p.zx,-phi);
+  }
+  return p;
+}
+
+void mainImage( out vec4 fragColor, vec2 fragCoord) {
   float scale = 1.0;
   float camera = 4.0;
   vec2 uv = scale*(2.0*fragCoord.xy - iResolution.xy)/iResolution.y;
   vec3 p = vec3(0,0,camera);
   vec3 r = vec3(uv,-2);
-  fragColor = mainFun(p,r,vec3(0,0,-1));
+  vec3 rcentre = vec3(0,0,-1);
+  p = mousetransform(p);
+  r = mousetransform(r);
+  rcentre = mousetransform(rcentre);
+  fragColor = mainFun(p,r,rcentre);
 }

@@ -85,11 +85,11 @@ vec4 mainFun(vec3 p, vec3 q, vec3 rcentre) {
   p *= scale;
   q = normalize(q);
   float mindist = 1e10;
-  vec4 color = vec4(0); // Accumulate color here
   vec3 r = vec3(0,1,0);
   N += floor(mod(iMouse.w,6.0));
   float theta = 2.0*PI/N;
   mat2 m = mat2(cos(theta),sin(theta),-sin(theta),cos(theta));
+  vec4 color = vec4(0); // Accumulate color here
   for (float i = 0.0; i < N; i++, r.xy*=m) {
     r = normalize(r);
     vec3 s = vec3(r.y,-r.x,0);
@@ -104,10 +104,9 @@ vec4 mainFun(vec3 p, vec3 q, vec3 rcentre) {
   return color;
 }
 
-vec4 mainXR(vec3 eye, vec3 ray, vec3 rcentre) {
-  // Should have a proper model transform here
-  vec3 modeloffset = vec3(0,0,2.5);
-  return mainFun(eye+modeloffset,ray,rcentre);
+vec4 mainXR(vec3 viewer, vec3 ray, vec3 rcentre) {
+  vec3 sceneoffset = vec3(0,0,2.5);
+  return mainFun(viewer+sceneoffset,ray,rcentre);
 }
 
 void mainVR( out vec4 fragColor, in vec2 fragCoord,

@@ -13,31 +13,25 @@
 const VR_MODE = 0;
 const AR_MODE = 1;
 
-function xrscene(mode,xrButton) {
-
+function xrscene(mode) {
     // If shaderfile is defined, load locally,
-    let shaderfile = null
-    shaderfile = "goursat.glsl";
-    //shaderfile = "pentagram.glsl";
-
-    // else try and load a Shadertoy shader
-    let shaderID = "3d2GDt" // Shadertoy Goursat
-    //let shaderID = "4sX3Rn" // iq's menger sponge
-    //let shaderID = "XdGczw"     // parallepiped
-    //let shaderID = "4tSBDz"     // inverted spheres
-
+    function getshaderfile() {
+        let shaderselect = document.getElementById("shaderfile");
+        return shaderselect.options[shaderselect.selectedIndex].value;
+    }
     if (mode != VR_MODE && mode != AR_MODE) {
         throw new Error('Invalid XR mode')
     }
-    let sessiontype = null;
-    let modename = null;
+    let sessiontype, modename, xrButton;
     if (mode == VR_MODE) {
         sessiontype = 'immersive-vr';
         modename = 'VR';
+        xrButton = document.getElementById('vr-button');
     } 
     if (mode == AR_MODE) {
         sessiontype = 'immersive-ar';
         modename = 'AR';
+        xrButton = document.getElementById('ar-button');
     } 
 
     // Experiment with 'local-floor', 'unbounded', etc.
@@ -66,7 +60,7 @@ function xrscene(mode,xrButton) {
             let typestring = "<unknown>";
             if (shadertype == gl.VERTEX_SHADER) typestring = "vertex";
             else if (shadertype == gl.FRAGMENT_SHADER) typestring = "fragment";
-            alert("Error for " + shadertype + " shader: " + infolog);
+            alert("Error for " + typestring + " shader: " + infolog);
         }
     }
 
@@ -104,10 +98,10 @@ function xrscene(mode,xrButton) {
             "void mainVR(out vec4 color, vec2 fragCoord, vec3 p, vec3 q);",
             "void main() {",
             "  vec4 screenpos = vec4(vTextureCoord,0,1);", // The "screen position", -1 <= z <= 1
-            "  vec4 eye = vec4(0,0,1,0);",         // z-infinity
-            "  eye = transformMatrix*eye;",
+            "  vec4 viewer = vec4(0,0,1,0);",         // z-infinity
+            "  viewer = transformMatrix*viewer;",
             "  screenpos = transformMatrix*screenpos;",
-            "  vec3 p = eye.xyz/eye.w;",
+            "  vec3 p = viewer.xyz/viewer.w;",
             "  vec3 r = screenpos.xyz/screenpos.w;",
             "  mainVR(outColor,vTextureCoord,p,normalize(r-p));",
             (mode == VR_MODE ? "  outColor.a = 1.0;" : ""), // Use alpha blending for AR
@@ -243,14 +237,17 @@ function xrscene(mode,xrButton) {
         selectcount++;
     }
     
-    function makeshaderurl(shaderID) {
+    function makeshaderfileurl(shaderfile) {
         const qparam = new Date().getTime();  // Skip caching
-        if (shaderfile) return shaderfile + "?" + qparam;
-        else if (shaderID) return "https://www.shadertoy.com/api/v1/shaders/" + shaderID + "?key=fdntwh&" + qparam;
-        else throw new Error('No shader specified');
+        return shaderfile + "?" + qparam;
     }
-
+    function makeshadertoyurl(shaderid) {
+        const qparam = new Date().getTime();  // Skip caching
+        return "https://www.shadertoy.com/api/v1/shaders/" + shaderID + "?key=fdntwh&" + qparam;
+    }
     function onSessionStarted (session) {
+        selectcount = 0;
+        framecount = 0;
         xrSession = session;
         xrButton.textContent = 'Exit ' + modename;
         session.addEventListener('end', onSessionEnded);
@@ -267,9 +264,21 @@ function xrscene(mode,xrButton) {
         gl = webglCanvas.getContext('webgl2', { xrCompatible: true })
         if (!gl) throw new Error('getContext failed');
 
+        // Get local shaderfile
+        let shaderurl, shaderfile = getshaderfile()
+        if (shaderfile) shaderurl = makeshaderfileurl(shaderfile);
+        else {
+            // try and load a Shadertoy shader
+            let shaderid = "3d2GDt" // Shadertoy Goursat
+            //let shaderid = "4sX3Rn" // iq's menger sponge
+            //let shaderid = "XdGczw"     // parallepiped
+            //let shaderid = "4tSBDz"     // inverted spheres
+            shaderurl = makeshadertoyurl(shaderid);
+        }
+
         // Send off a request for the fragment shader code.
         const request = new XMLHttpRequest();
-        request.open("GET", makeshaderurl(shaderID));
+        request.open("GET", shaderurl);
         request.onreadystatechange = function() {
             if (request.readyState === 4) {
                 function setRefSpace(refSpace) {

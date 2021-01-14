@@ -38,19 +38,23 @@
   <body>
     <header>
       <details open>
-        <summary>Raytraced WebXR VR Demo</summary>
+        <summary>Raytraced WebXR Demo</summary>
         <p>
-          Demo of a basic raytraced scene, displayed with WebXR. 
-          <a class="back" href="./">Back</a>
+          Demo of a basic raytraced scene, displayed with WebXR (<a href='README.html'>Readme</a>).
         </p>
-        <button id="vr-button" class="barebones-button" disabled>VR not found</button>
-        <button id="ar-button" class="barebones-button" disabled>AR not found</button>
         <p>
-          <a href='README.html'>README</a>
+          <button id="vr-button" class="xr-button" disabled>VR not found</button><button id="ar-button" class="xr-button" disabled>AR not found</button>
+        </p>
+        <p>
+          <select id="shaderfile" class="xr-pulldown">
+            <option value=tetrahedron.glsl>Tetrahedron</option>
+            <option value=goursat.glsl>Goursat</option>
+            <option value=pentagram.glsl>Pentagram</option>
+          </select>
         </p>
       </details>
     </header>
-    <script>xrscene(VR_MODE,document.getElementById('vr-button'))</script>
-    <script>xrscene(AR_MODE,document.getElementById('ar-button'))</script>
+    <script>xrscene(VR_MODE)</script>
+    <script>xrscene(AR_MODE)</script>
   </body>
 </html>
