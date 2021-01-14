@@ -45,7 +45,7 @@ supports both simultaneously.
 
 ## How it works
 
-* Projection & view matrix
+* Projection & view matrix.
 In clipspace, the viewer is at `(0,0,1,0)`, ie. infinitely far away in
 the positive z direction. To get a real viewer position, apply the
 inverse of the projection matrix combined with the view matrix (which
@@ -55,10 +55,13 @@ defines how the user is positioned in the reference frame).
   mat4.invert(transformMatrix,transformMatrix);
   gl.uniformMatrix4fv(gl.getUniformLocation(program, "transformMatrix"), false, transformMatrix);
 ```
-* Selective AA
+* Selective AA. Use distance from centre of image to determine level
+of antialiasing:
 ```cpp
   vec3 drdx = dFdx(r);
   vec3 drdy = dFdy(r);
+  float k = dot(r,rcentre);
+  float aa = float(k > 0.96 ? 3 : k > 0.9 ? 2 : 1);
   for (float i = 0.0; i < aa; i++) {
     for (float j = 0.0; j < aa; j++) {
       if (scene(p,normalize(r+i/aa*drdx+j/aa*drdy),col1)) {
@@ -67,7 +70,7 @@ defines how the user is positioned in the reference frame).
     }
   }
 ```
-* Centre ray: in clipspace, the centre of the the view is at
+* Centre ray. In clipspace, the centre of the the view is at
 `(0,0,-1.0)`, ie. infinitely far away in the negative z direction, to
 map that to a viewer relative direction, apply the inverse of the view
 matrix (so the result is still a projective point at infinity):
@@ -76,10 +79,10 @@ matrix (so the result is still a projective point at infinity):
 ```
 * Alpha blending. In AR mode, the framework uses alpha blending to
 combine the generated image with the real world image.
-* Selection events: selection events are detected by the javascript
+* Selection events. Selection events are detected by the javascript
 framework and are passed to the shader as the w component of the
 iMouse uniform.
-* Errors: generally, the code raises exceptions on errors, better
+* Errors. Generally, the code raises exceptions on errors, better
 reporting would be good. Debugging is easier with the emulator &
 making use of the Javascript console.
 
