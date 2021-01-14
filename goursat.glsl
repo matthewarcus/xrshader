@@ -344,9 +344,14 @@ bool scene(vec3 p0, vec3 r, out vec3 col) {
   float rtime1 = floor(ttime+0.5);
   ttime = fract(2.0*ttime);
   vec4 params = vec4(0);
-  params = mix(goursatparams(int(rtime0)%nparams),
-               goursatparams(int(rtime1)%nparams),
-               ttime);
+  int selection = int(iMouse.w)%(nparams+1);
+  if (selection == 0) {
+    params = mix(goursatparams(int(rtime0)%nparams),
+                 goursatparams(int(rtime1)%nparams),
+                 ttime);
+  } else {
+    params = goursatparams(selection-1);
+  }
   Surface surface = Surface(params,vec3(0),1);
   if (!solve(surface,p0,r,-tmin,res)) return false;
   col = applylighting(res.basecolor,res.p,res.n,r);
@@ -388,15 +393,14 @@ vec4 mainFun(vec3 p, vec3 r, vec3 rcentre) {
     for (float j = 0.0; j < aa; j++) {
       vec3 col1;
       // What to do with partially visible pixels?
-      if (!scene(p,normalize(r+(i-0.5*aa)/aa*drdx+(j-0.5*aa)/aa*drdy),col1)) {
-        return vec4(0);
+      if (scene(p,normalize(r+(i-0.5*aa)/aa*drdx+(j-0.5*aa)/aa*drdy),col1)) {
+        color += col1;
       }
-      color += col1;
     }
   }
   color /= aa*aa;
   //if (dot(r,rcentre) > 0.999) color.b = 1.0;
-  color *= sqrt(aa0/3.0); // Show aa bands
+  //color *= sqrt(aa0/3.0); // Show aa bands
   if (alert) color.x = 1.0;
   return vec4(sqrt(color),1);
 }

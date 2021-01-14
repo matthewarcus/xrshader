@@ -14,6 +14,18 @@ const VR_MODE = 0;
 const AR_MODE = 1;
 
 function xrscene(mode,xrButton) {
+
+    // If shaderfile is defined, load locally,
+    let shaderfile = null
+    shaderfile = "goursat.glsl";
+    shaderfile = "pentagram.glsl";
+
+    // else try and load a Shadertoy shader
+    let shaderID = "3d2GDt" // Shadertoy Goursat
+    //let shaderID = "4sX3Rn" // iq's menger sponge
+    //let shaderID = "XdGczw"     // parallepiped
+    //let shaderID = "4tSBDz"     // inverted spheres
+
     if (mode != VR_MODE && mode != AR_MODE) {
         throw new Error('Invalid XR mode')
     }
@@ -31,17 +43,6 @@ function xrscene(mode,xrButton) {
     // Experiment with 'local-floor', 'unbounded', etc.
     // 'local' works on my phone
     let referencespace = 'local';
-
-    // If shaderfile is defined, load locally,
-    let shaderfile = null
-    //shaderfile = "goursat.glsl";
-    shaderfile = "pentagram.glsl";
-
-    // else try and load a Shadertoy shader
-    let shaderID = "3d2GDt" // Shadertoy Goursat
-    //let shaderID = "4sX3Rn" // iq's menger sponge
-    //let shaderID = "XdGczw"     // parallepiped
-    //let shaderID = "4tSBDz"     // inverted spheres
 
     let xrSession = null;
     let xrRefSpace = null;
