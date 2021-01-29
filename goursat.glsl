@@ -40,117 +40,98 @@ vec2 rotate(vec2 p, float t) {
   return p * cos(t) + vec2(p.y, -p.x) * sin(t);
 }
 
-// The Kahan algorithm, for explanation see:
-// https://people.eecs.berkeley.edu/~wkahan/Math128/Cubic.pdf
-
 float sgn(float x) {
-  return x < 0.0? -1.0: 1.0; // Return 1 for x == 0
+  return x < 0.0 ? -1.0: 1.0; // Return 1 for x == 0
 }
 
+float evalquadratic(float x, float A, float B, float C) {
+  return (A*x+B)*x+C;
+}
+
+float evalcubic(float x, float A, float B, float C, float D) {
+  return ((A*x+B)*x+C)*x+D;
+}
+
+// Quadratic solver from Kahan
 int quadratic(float A, float B, float C, out vec2 res) {
-  float x1,x2;
-  float b = -0.5*B;
-  float q = b*b - A*C;
+  float b = -0.5*B, b2 = b*b;
+  float q = b2 - A*C;
   if (q < 0.0) return 0;
   float r = b + sgn(b)*sqrt(q);
   if (r == 0.0) {
-    x1 = C/A; x2 = -x1;
+    res[0] = C/A;
+    res[1] = -res[0];
   } else {
-    x1 = C/r; x2 = r/A;
+    res[0] = C/r;
+    res[1] = r/A;
   }
-  res = vec2(x1,x2);
   return 2;
 }
 
-int quadratic(vec3 coeffs, out vec2 res) {
-  return quadratic(coeffs[0],coeffs[1],coeffs[2],res);
-}
-  
-void eval(float X, float A, float B, float C, float D,
-          out float Q, out float Q1, out float B1,out float C2) {
-  float q0 = A*X;
-  B1 = q0+B;
-  C2 = B1*X+C;
-  Q1 = (q0+B1)*X + C2;
-  Q = C2*X + D;
-}
-
-// Solve: Ax^3 + Bx^2 + Cx + D == 0
-// Find one real root, then reduce to quadratic.
-int cubic(float A, float B, float C, float D, out vec3 res) {
-  float X,b1,c2;
-  if (A == 0.0) {
-    X = 1e8; A = B; b1 = C; c2 = D;
-  } else if (D == 0.0) {
-    X = 0.0; b1 = B; c2 = C;
+// Numerical Recipes algorithm for solving cubic equation
+int cubic(float a, float b, float c, float d, out vec3 res) {
+  if (a == 0.0) {
+    return quadratic(b,c,d,res.xy);
+  }
+  if (d == 0.0) {
+    res.x = 0.0;
+    return 1+quadratic(a,b,c,res.yz);
+  }
+  float tmp = a; a = b/tmp; b = c/tmp; c = d/tmp;
+  // solve x^3 + ax^2 + bx + c = 0
+  float Q = (a*a-3.0*b)/9.0;
+  float R = (2.0*a*a*a - 9.0*a*b + 27.0*c)/54.0;
+  float R2 = R*R, Q3 = Q*Q*Q;
+  if (R2 < Q3) {
+    float X = clamp(R/sqrt(Q3),-1.0,1.0);
+    float theta = acos(X);
+    float S = sqrt(Q); // Q must be positive since 0 <= R2 < Q3
+    res[0] = -2.0*S*cos(theta/3.0)-a/3.0;
+    res[1] = -2.0*S*cos((theta+2.0*PI)/3.0)-a/3.0;
+    res[2] = -2.0*S*cos((theta+4.0*PI)/3.0)-a/3.0;
+    return 3;
   } else {
-    X = -(B/A)/3.0;
-    float t,r,s,q,dq,x0;
-    eval(X,A,B,C,D,q,dq,b1,c2);
-    t = q/A; r = pow(abs(t),1.0/3.0); s = sgn(t);
-    t = -dq/A; if (t > 0.0) r = 1.324718*max(r,sqrt(t));
-    x0 = X - s*r;
-    if (x0 != X) {
-      // Newton-Raphson
-      for (int i = 0; i < 6; i++) {
-        X = x0;
-        eval(X,A,B,C,D,q,dq,b1,c2);
-        if (dq == 0.0) break;
-        x0 -= (q/dq);
-      }
-      if (abs(A)*X*X > abs(D/X)) {
-        c2 = -D/X; b1 = (c2 - C)/X;
-      }
-    }
+    float alpha = -sgn(R)*pow(abs(R)+sqrt(R2-Q3),0.3333);
+    float beta = alpha == 0.0 ? 0.0 : Q/alpha;
+    res[0] = alpha + beta - a/3.0;
+    return 1;
   }
-  res.x = X;
-  return 1 + quadratic(A,b1,c2,res.yz);
 }
 
-int cubic(vec4 coeffs, out vec3 res) {
-  float A = coeffs[0], B = coeffs[1], C = coeffs[2], D = coeffs[3];
-  return cubic(A,B,C,D,res);
-}
-
-// Special wrapper for cubic function for solving quartic.
-// Find largest real root of x**3 + a*x**2 + b*x + c
-// Assume c < 0
-float qcubic(float a, float b, float c) {
-  // c is always <= 0, but may be very
-  // small, in which case we return an
-  // approximation. Never return < 0.
-  assert(c <= 0.0);
-  if (c == 0.0) return 0.0;
-  if (false) {
-    // This helps with double roots, but sometimes is
-    // completely the wrong thing to do.
-    // Further investigation required.
-    if (c > -1e-6) {
-      if (b > 1e-10) return -c/b;
-      //if (b > 0.0) return -c/b; // Keep it simple.
-      if (b > -1e-4) return 0.0;
-    }
+float qcubic(float B, float C, float D) {
+  vec3 roots;
+  int nroots = cubic(1.0,B,C,D,roots);
+  // Sort into descending order
+  if (nroots > 1 && roots.x < roots.y) roots.xy = roots.yx;
+  if (nroots > 2) {
+    if (roots.y < roots.z) roots.yz = roots.zy;
+    if (roots.x < roots.y) roots.xy = roots.yx;
   }
-  vec3 res;
-  int nroots = cubic(1.0,a,b,c,res);
-  if (nroots == 1) return res.x;
-  else return max(res.x,max(res.y,res.z));
+  // And select the largest
+  float psi = roots[0];
+  // There _should_ be a positive root, but sometimes the cubic
+  // solver doesn't find it directly (probably a double root
+  // around zero).
+  if (psi < 0.0) assert(evalcubic(psi,1.0,B,C,D) < 0.0);
+  // If so, nudge in the right direction
+  psi = max(1e-6,psi);
+  // and give a quick polish with Newton-Raphson
+  for (int i = 0; i < 3; i++) {
+    float delta = evalcubic(psi,1.0,B,C,D)/evalquadratic(psi,3.0,2.0*B,C);
+    psi -= delta;
+  }
+  return psi;
 }
 
-int quartic(vec4 coeffs, out vec4 res) {
-  float c1 = coeffs[0];
-  float c2 = coeffs[1];
-  float c3 = coeffs[2];
-  float c4 = coeffs[3];
+// The Lanczos quartic method
+int lquartic(float c1, float c2, float c3, float c4, out vec4 res) {
   float alpha = 0.5*c1;
   float A = c2-alpha*alpha;
   float B = c3-alpha*A;
   float a,b,beta,psi;
   psi = qcubic(2.0*A-alpha*alpha, A*A+2.0*B*alpha-4.0*c4, -B*B);
-  //assert(!isnan(psi));
-  //assert(!isinf(psi));
-  //assert(psi >= 0.0);
-  a = sqrt(max(0.0,psi));
+  psi = max(0.0,psi);
+  a = sqrt(psi);
   beta = 0.5*(A + psi);
   if (psi <= 0.0) {
     b = sqrt(max(beta*beta-c4,0.0));
@@ -169,21 +150,16 @@ int quartic(vec4 coeffs, out vec4 res) {
 
 int quartic(float A, float B, float C, float D, float E, out vec4 roots) {
   int nroots;
-  // There may be a better heuristic for this.
-  // but this avoids the worst glitches.
-  if (abs(E) < 10.0*abs(A)) {
-    vec4 coeffs = vec4(B,C,D,E)/A;
-    nroots = quartic(coeffs,roots);
+  // Solve for the smallest cubic term, this seems to give the least wild behaviour.
+  if (abs(B/A) < abs(D/E)) {
+    nroots = lquartic(B/A,C/A,D/A,E/A,roots);
   } else {
-    // It can be advantageous to use the coefficients in the
-    // opposite order, thus solving for the reciprocal.
-    vec4 coeffs = vec4(D,C,B,A)/E;
-    nroots = quartic(coeffs,roots);
-    for (int i = 0; i < 4; i++) {
-      if (i == nroots) break;
+    nroots = lquartic(D/E,C/E,B/E,A/E,roots);
+    for (int i = 0; i < nroots; i++) {
       roots[i] = 1.0/roots[i];
     }
   }
+  assert(nroots == 0 || nroots == 2 || nroots == 4);
   return nroots;
 }
 
@@ -339,7 +315,7 @@ bool scene(vec3 p0, vec3 r, out vec3 col) {
   float tmin = -dot(p0,r);
   p0 += tmin*r;
   Result res = Result(vec3(0),vec3(0),vec3(0),1e8);
-  float ttime = 0.5*iTime;
+  float ttime = 0.2*iTime;
   float rtime0 = floor(ttime);
   float rtime1 = floor(ttime+0.5);
   ttime = fract(2.0*ttime);
