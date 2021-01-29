@@ -94,7 +94,9 @@ function xrscene(mode) {
             "uniform vec4 iMouse;",
             "out vec4 outColor;",
             "in vec2 vTextureCoord;",
-
+            "#define VR_MODE 0",
+            "#define AR_MODE 1",
+            "const int XR_MODE = " + (mode == VR_MODE ? "VR_MODE" : "AR_MODE") + ";",
             "void mainVR(out vec4 color, vec2 fragCoord, vec3 p, vec3 q);",
             "void main() {",
             "  vec4 screenpos = vec4(vTextureCoord,0,1);", // The "screen position", -1 <= z <= 1

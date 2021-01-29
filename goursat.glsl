@@ -354,8 +354,8 @@ vec4 mainFun(vec3 p, vec3 r, vec3 rcentre) {
   vec4 color = vec4(0);
   float k = dot(r,rcentre);
   // Just antialias the central part of the image.
-  float aa0 = float(k > 0.96 ? 3 : k > 0.9 ? 2 : 1);
-  float aa = aa0;
+  float aa = (XR_MODE == AR_MODE || k < 0.9) ? 1.0 : 2.0;
+  //float aa0 = aa;
   if (iMouse.z > 0.0) aa = 1.0; // Just for comparison
   for (float i = 0.0; i < aa; i++) {
     for (float j = 0.0; j < aa; j++) {
@@ -367,7 +367,7 @@ vec4 mainFun(vec3 p, vec3 r, vec3 rcentre) {
     }
   }
   color /= aa*aa;
-  if (dot(r,rcentre) > 0.999) color.b = 1.0;
+  if (dot(r,rcentre) > 0.9995) color.b = 1.0;
   //color *= sqrt(aa0/3.0); // Show aa bands
   if (alert) color.x = 1.0;
   return pow(color,vec4(0.4545));
