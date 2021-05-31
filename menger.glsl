@@ -98,10 +98,10 @@ vec3 calcNormal(in vec3 pos)
 // light
 vec3 light = normalize(vec3(1.0,0.9,0.3));
 
-vec3 render( in vec3 ro, in vec3 rd )
+vec4 render( in vec3 ro, in vec3 rd )
 {
     // background color
-    vec3 col = mix( vec3(0.3,0.2,0.1)*0.5, vec3(0.7, 0.9, 1.0), 0.5 + 0.5*rd.y );
+  vec4 col = vec4(mix( vec3(0.3,0.2,0.1)*0.5, vec3(0.7, 0.9, 1.0), 0.5 + 0.5*rd.y),0 );
 	
     vec4 tmat = intersect(ro,rd);
     if( tmat.x>0.0 )
@@ -126,12 +126,13 @@ vec3 render( in vec3 ro, in vec3 rd )
             0.5+0.5*cos(0.0+2.0*tmat.z),
             0.5+0.5*cos(1.0+2.0*tmat.z),
             0.5+0.5*cos(2.0+2.0*tmat.z) );
-        col = matcol * lin;
+        col = vec4(matcol * lin,1);
     }
 
-    return pow( col, vec3(0.4545) );
+    return vec4(pow( col.xyz, vec3(0.4545)), col.w);
 }
 
+#if 0
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     // camera
@@ -166,13 +167,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     fragColor = vec4(col,1.0);
 }
-
+#endif
 
 void mainVR( out vec4 fragColor, in vec2 fragCoord, in vec3 fragRayOri, in vec3 fragRayDir )
 {
     float time = iTime*0.25 + 0.01*iMouse.x;
     float anim = 1.1 + 0.5*smoothstep( -0.3, 0.3, cos(0.1*iTime) );
 
-    vec3 col = render( fragRayOri + vec3(0.0,1.0,2.5), fragRayDir );
-    fragColor = vec4( col, 1.0 );
+    vec4 col = render( fragRayOri + vec3(0.0,1.0,2.5), fragRayDir );
+    fragColor = col;
 }
