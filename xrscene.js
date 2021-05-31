@@ -14,7 +14,11 @@ const VR_MODE = 0;
 const AR_MODE = 1;
 
 function xrscene(mode) {
-    // If shaderfile is defined, load locally,
+    // Set shaderid to Shadertoy ID to override local shaderfile selection
+    // NB: textures & buffers not currently supported.
+    let shaderid;
+    //shaderid = "4sX3Rn";     // Iq's Menger Sponge
+
     function getshaderfile() {
         let shaderselect = document.getElementById("shaderfile");
         return shaderselect.options[shaderselect.selectedIndex].value;
@@ -113,7 +117,7 @@ function xrscene(mode) {
             ""
         ].join("\n");
 
-        if (!shaderfile) {
+        if (shaderid) {
             // Pull data out from Shadertoy JSON response.
             // This is probably a bit fragile.
             const json = JSON.parse(fsource);
@@ -238,14 +242,17 @@ function xrscene(mode) {
         //alert("onSelect");
         selectcount++;
     }
-    
-    function makeshaderfileurl(shaderfile) {
+
+    // Make local URL for shader file
+    function makeshaderfileurl(file) {
         const qparam = new Date().getTime();  // Skip caching
-        return shaderfile + "?" + qparam;
+        return file + "?" + qparam;
     }
-    function makeshadertoyurl(shaderid) {
+
+    // Make Shadertoy URL for shader file
+    function makeshadertoyurl(id) {
         const qparam = new Date().getTime();  // Skip caching
-        return "https://www.shadertoy.com/api/v1/shaders/" + shaderID + "?key=fdntwh&" + qparam;
+        return "https://www.shadertoy.com/api/v1/shaders/" + id + "?key=fdntwh&" + qparam;
     }
     function onSessionStarted (session) {
         selectcount = 0;
@@ -267,15 +274,12 @@ function xrscene(mode) {
         if (!gl) throw new Error('getContext failed');
 
         // Get local shaderfile
-        let shaderurl, shaderfile = getshaderfile()
-        if (shaderfile) shaderurl = makeshaderfileurl(shaderfile);
-        else {
-            // try and load a Shadertoy shader
-            let shaderid = "3d2GDt" // Shadertoy Goursat
-            //let shaderid = "4sX3Rn" // iq's menger sponge
-            //let shaderid = "XdGczw"     // parallepiped
-            //let shaderid = "4tSBDz"     // inverted spheres
-            shaderurl = makeshadertoyurl(shaderid);
+        let shaderurl;
+        if (shaderid) {
+            shaderurl = makeshadertoyurl(shaderid); // Use Shadertoy URL
+        } else {
+            let shaderfile = getshaderfile();
+            shaderurl = makeshaderfileurl(shaderfile); // Use local URL
         }
 
         // Send off a request for the fragment shader code.
